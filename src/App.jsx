@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Search from "./components/Search";
 import Spinner from "./components/spinner";
 import MovieCard from "./components/MovieCard";
+import { useDebounce } from "react-use";
 
 const API_BASE_URL = "https://api.themoviedb.org/3";
 
@@ -20,8 +21,11 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-  const fetchMovies = async (query = '') => {
+  useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
+
+  const fetchMovies = async (query = "") => {
     setIsLoading(true);
     setErrorMessage("");
     try {
@@ -31,41 +35,42 @@ const App = () => {
 
       const response = await fetch(endpoint, API_OPTIONS);
 
-      if(!response.ok) {
+      if (!response.ok) {
         throw new Error("Failed to fetch movies");
       }
 
       const data = await response.json();
 
-      if(data.Response === "False") {
+      if (data.Response === "False") {
         setErrorMessage(data.Error || "Failed to fetch movies");
         setMovieList([]);
         return;
       }
 
       setMovieList(data.results || []);
-
-    } catch(error) {
+    } catch (error) {
       console.error("Error fetching movies:", `${error}`);
       setErrorMessage("Failed to fetch movies. Please try again later.");
     } finally {
       setIsLoading(false);
     }
-
-  }
+  };
 
   useEffect(() => {
-    fetchMovies(searchTerm);
-  }, [searchTerm]);
+    fetchMovies(debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
 
   return (
     <main>
-      <div className="pattern"/>
+      <div className="pattern" />
 
       <div className="wrapper">
         <header>
           <img src="/hero.png" alt="Hero Banner" />
-          <h1>Find <span className="text-gradient">Movies</span> You'll Enjoy Without the Hassle</h1>
+          <h1>
+            Find <span className="text-gradient">Movies</span> You'll Enjoy
+            Without the Hassle
+          </h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
 
@@ -82,12 +87,10 @@ const App = () => {
                 <MovieCard key={movie.id} movie={movie} />
               ))}
             </ul>
-          )
-        }
+          )}
 
           {errorMessage && <p className="text-red-500">{errorMessage}</p>}
         </section>
-
       </div>
     </main>
   );
